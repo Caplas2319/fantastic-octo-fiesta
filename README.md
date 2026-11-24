@@ -1,2 +1,2 @@
-# fantastic-octo-fiesta-chat
+# fantastic-octo-fiesta
 奇妙章鱼节
