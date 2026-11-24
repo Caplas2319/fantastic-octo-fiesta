@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>对话</title>
+<style>
+:root{--bg:#f5f6f4;--sf:#fff;--ink:#1d2326;--mu:#6a7479;--ln:#dde1e0;--ac:#2f6f68;--on:#fff;--me:#2f6f68;--meT:#fff;--ok:#2e9e6b;--warn:#d99a21}
+@media(prefers-color-scheme:dark){:root{--bg:#121618;--sf:#1b2124;--ink:#e6ebea;--mu:#8a9697;--ln:#2a3235;--ac:#5fb3a8;--on:#0d1514;--me:#2c5c56;--meT:#e6ebea}}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.6 system-ui,-apple-system,"PingFang SC","Noto Sans SC","Microsoft YaHei",sans-serif}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+#app{height:100dvh;display:flex;flex-direction:column;max-width:820px;margin:0 auto;background:var(--bg)}
+header{display:flex;align-items:center;gap:2px;height:52px;padding:0 6px;border-bottom:1px solid var(--ln)}
+header h1{flex:1;margin:0 4px;font-size:17px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ic{position:relative;width:40px;height:40px;display:grid;place-items:center;border-radius:10px;color:var(--ink)}
+.ic:hover{background:var(--ln)}
+.ic.off{color:var(--mu);opacity:.6}
+.ic svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+#dot{position:absolute;right:7px;top:7px;width:8px;height:8px;border-radius:50%;background:var(--warn);border:1.5px solid var(--bg)}
+#dot.ok{background:var(--ok)}
+#notice{display:flex;align-items:center;gap:10px;padding:8px 14px;background:var(--sf);border-bottom:1px solid var(--ln);font-size:14px;color:var(--mu)}
+#notice span{flex:1}
+#notice button{padding:4px 12px;border-radius:8px;background:var(--ac);color:var(--on);font-size:14px}
+[hidden]{display:none!important}
+main{flex:1;overflow-y:auto;padding:16px 14px;display:flex;flex-direction:column;gap:12px}
+.empty{margin:auto;text-align:center;color:var(--mu);font-size:15px}
+.m{max-width:86%;padding:9px 13px;border-radius:14px;white-space:pre-wrap;word-break:break-word}
+.m.user{align-self:flex-end;background:var(--me);color:var(--meT);border-bottom-right-radius:4px}
+.m.assistant{align-self:flex-start;background:var(--sf);border:1px solid var(--ln);border-bottom-left-radius:4px}
+footer{padding:8px 12px max(10px,env(safe-area-inset-bottom))}
+.box{background:var(--sf);border:1px solid var(--ln);border-radius:16px;padding:8px 8px 4px 12px}
+textarea{display:block;width:100%;border:0;outline:0;resize:none;background:none;color:var(--ink);font:inherit;max-height:160px;padding:4px 0}
+.tools{display:flex;justify-content:space-between;align-items:center;margin-top:2px}
+.tools .ic{width:38px;height:38px}
+#send{background:var(--ac);color:var(--on);border-radius:50%}
+#send:hover{background:var(--ac);filter:brightness(1.08)}
+#sheet{position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:flex-end;justify-content:center}
+.panel{width:100%;max-width:820px;background:var(--sf);border-radius:18px 18px 0 0;padding:16px 16px max(18px,env(safe-area-inset-bottom))}
+.panel h2{margin:0 0 4px;font-size:17px}
+.panel p{margin:0 0 12px;font-size:14px;color:var(--mu)}
+.panel .row{display:flex;flex-wrap:wrap;gap:8px}
+.panel .row button{flex:1 1 40%;padding:11px 8px;border:1px solid var(--ln);border-radius:12px}
+.panel .row button:hover{background:var(--ln)}
+.panel .row button.main{background:var(--ac);color:var(--on);border-color:var(--ac)}
+#toast{position:fixed;left:50%;bottom:110px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:20px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;max-width:88%;text-align:center}
+#toast.on{opacity:1}
+.r{display:flex;flex-direction:column;max-width:86%}
+.r.user{align-self:flex-end;align-items:flex-end}
+.r.assistant{align-self:flex-start;align-items:flex-start}
+.r .m{max-width:100%}
+.r.editing{width:100%;max-width:100%;align-items:stretch}
+.r .ed{border:1px solid var(--ln);border-radius:12px;background:var(--sf);padding:9px 12px;max-height:50vh;overflow-y:auto}
+.acts{display:flex;gap:2px;margin-top:2px;align-items:center}
+.acts .ic{width:32px;height:32px;color:var(--mu)}
+.acts .ic svg{width:17px;height:17px}
+.acts .tb{margin:4px 6px 0 0}
+.tb{padding:5px 14px;border-radius:8px;border:1px solid var(--ln)}
+.tb.main{background:var(--ac);color:var(--on);border-color:var(--ac)}
+footer{position:relative;z-index:4}
+#pickBg{position:fixed;inset:0;z-index:3}
+#pick{position:absolute;left:12px;right:12px;bottom:100%;max-height:50vh;overflow-y:auto;background:var(--sf);border:1px solid var(--ln);border-radius:14px;padding:4px;box-shadow:0 4px 18px rgba(0,0,0,.15)}
+.pi{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;padding:11px 12px;border-radius:10px;text-align:left;word-break:break-all}
+.pi:hover{background:var(--ln)}
+.pi small{color:var(--mu);font-size:13px;white-space:nowrap}
+.pn{padding:10px 12px;color:var(--mu);font-size:14px;display:flex;gap:8px}
+.pn input{flex:1;min-width:0;padding:8px 10px;border:1px solid var(--ln);border-radius:10px;background:var(--bg);color:var(--ink);font:inherit}
+.selw{display:flex;align-items:center;min-width:0}
+#selLabel{font-size:13px;color:var(--mu);max-width:42vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.screen{position:fixed;inset:0;z-index:6;background:var(--bg);overflow-y:auto}
+.screen .in{max-width:820px;margin:0 auto}
+.bar{display:flex;align-items:center;gap:4px;height:52px;padding:0 6px;border-bottom:1px solid var(--ln)}
+.bar h2{margin:0 4px;font-size:17px}
+.body{padding:14px 16px 40px}
+.body h3{margin:0 0 8px;font-size:15px;color:var(--mu);font-weight:600}
+.hint{color:var(--mu);font-size:14px;margin:0 0 8px}
+.wide{width:100%;padding:11px;border:1px solid var(--ln);border-radius:12px;margin:8px 0}
+.wide.main{background:var(--ac);color:var(--on);border-color:var(--ac)}
+.sw{display:flex;align-items:center;gap:10px;padding:6px 0}
+.fld{display:block;margin-bottom:12px;font-size:14px;color:var(--mu)}
+.fld input,.fld select{display:block;width:100%;margin-top:4px;padding:10px 12px;border:1px solid var(--ln);border-radius:10px;background:var(--sf);color:var(--ink);font:inherit}
+.fld textarea{display:block;width:100%;margin-top:4px;padding:10px 12px;border:1px solid var(--ln);border-radius:10px;background:var(--sf);color:var(--ink);font:inherit;max-height:50vh;resize:vertical}
+.qb{border:1px solid var(--ln);border-radius:12px;background:var(--sf);margin-bottom:10px}
+.qb summary{display:flex;align-items:center;gap:8px;padding:12px;cursor:pointer;list-style:none}
+.qb summary::-webkit-details-marker{display:none}
+.qb .t{font-weight:600}
+.qb .n{flex:1;color:var(--mu);font-size:14px}
+.qb input{width:22px;height:22px}
+.qb.off .t,.qb.off .n,.qb.off .qc{opacity:.5}
+.qb .qc{padding:0 12px 12px;max-height:45vh;overflow-y:auto;white-space:pre-wrap;word-break:break-word;font-size:15px}
+.qm{margin-bottom:8px}
+.qm b{color:var(--ac);margin-right:6px}
+.tabs{display:flex;gap:6px;padding:8px 12px 0;border-bottom:1px solid var(--ln)}
+.tab{padding:8px 14px;color:var(--mu)}
+.tab.on{color:var(--ink);font-weight:600;box-shadow:inset 0 -2px var(--ac)}
+.mi{display:flex;align-items:center;gap:8px;border:1px solid var(--ln);border-radius:12px;background:var(--sf);margin-bottom:8px;padding:4px 12px 4px 0}
+.mi.off{opacity:.55}
+.mi input{width:22px;height:22px}
+.mt{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;padding:8px 12px;text-align:left}
+.mt .a{font-weight:600}
+.mt .b{color:var(--mu);font-size:14px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#memEd{z-index:7}
+#edText,#dText{display:block;width:100%;border:1px solid var(--ln);border-radius:10px;background:var(--bg);color:var(--ink);padding:10px 12px;font:inherit;resize:none}
+#edText{height:60vh;max-height:none;margin-bottom:8px}
+#dText{height:42vh;max-height:none;margin-top:8px}
+#sumDlg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:11;display:grid;place-items:center;padding:16px}
+#sumDlg .card{width:100%;max-width:560px;max-height:92vh;overflow-y:auto;background:var(--sf);border-radius:16px;padding:16px}
+#sumDlg h3{margin:0 0 6px;font-size:17px}
+#sumDlg .hint{margin:0}
+.dbtn{display:flex;gap:8px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap}
+.sh span{flex:1}
+.sh .ic{margin-right:-8px}
+#shM .ic{margin:0 4px 0 -8px}
+#shM span{text-align:center}
+.it{display:flex;align-items:center;gap:8px;padding:11px 12px;border-radius:10px;cursor:pointer}
+.it:hover{background:var(--ln)}
+.it.cur{background:var(--bg);font-weight:600}
+.it .tt{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.it small{color:var(--mu);font-size:13px;font-weight:400}
+.it input{width:20px;height:20px;flex:none}
+.grp{font-weight:600}
+.chev{width:16px;height:16px;flex:none;fill:none;stroke:var(--mu);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform .15s}
+.chev.open{transform:rotate(90deg)}
+.gc{padding-left:14px}
+.hd{width:34px;height:30px;margin:-4px -6px -4px 0;display:grid;place-items:center;touch-action:none;color:var(--mu);cursor:grab}
+.hd svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
+.drag{background:var(--ln);opacity:.85}
+#toast{z-index:12}
+#sideBg{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:7}
+#side{position:fixed;top:0;bottom:0;left:0;width:min(320px,84vw);background:var(--sf);border-right:1px solid var(--ln);transform:translateX(-100%);visibility:hidden;transition:transform .2s,visibility .2s;z-index:8;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top)}
+#side.on{transform:none;visibility:visible}
+.sh{height:52px;display:flex;align-items:center;padding:0 16px;font-weight:600;border-bottom:1px solid var(--ln)}
+#sideList{flex:1;overflow-y:auto;padding:6px;-webkit-user-select:none;user-select:none}
+.si{display:block;width:100%;padding:11px 12px;border-radius:10px;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.si:hover{background:var(--ln)}
+.si.cur{background:var(--bg);font-weight:600}
+.sb{display:flex;gap:8px;padding:10px 10px max(12px,env(safe-area-inset-bottom));border-top:1px solid var(--ln)}
+.sb .tb{flex:1;padding:9px 6px}
+#popBg{position:fixed;inset:0;z-index:10}
+#pop{position:fixed;z-index:11;min-width:140px;background:var(--sf);border:1px solid var(--ln);border-radius:12px;padding:4px;box-shadow:0 4px 18px rgba(0,0,0,.18)}
+:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <button class="ic" id="menuBtn" aria-label="会话菜单"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button>
+    <h1 id="title">新对话</h1>
+    <button class="ic" id="saveBtn" aria-label="存档设置"><svg viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5zM8 4v5h7V4M8 20v-6h8v6"/></svg><i id="dot"></i></button>
+    <button class="ic" id="qBtn" aria-label="发送队列"><svg viewBox="0 0 24 24"><path d="M9 4 3 6.5v13L9 17l6 3 6-2.5v-13L15 7 9 4zM9 4v13M15 7v13"/></svg></button>
+    <button class="ic" id="newBtn" aria-label="新建对话"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+  </header>
+  <div id="notice" hidden><span id="noticeText"></span><button id="noticeBtn"></button></div>
+  <main id="list"></main>
+  <div id="pickBg" hidden></div>
+  <footer>
+    <div id="pick" hidden></div>
+    <div class="box">
+      <textarea id="input" rows="1" placeholder="输入消息"></textarea>
+      <div class="tools">
+        <div class="selw"><button class="ic" id="apiBtn" aria-label="选择 API 和模型"><svg viewBox="0 0 24 24"><path d="M9 3v5M15 3v5M6 8h12v3a6 6 0 0 1-12 0zM12 17v4"/></svg></button><span id="selLabel"></span></div>
+        <div>
+          <button class="ic off" data-todo="附件将在第8步加入" aria-label="添加附件"><svg viewBox="0 0 24 24"><path d="M20 11.5 12 19.5a5 5 0 0 1-7-7L13.5 4a3.4 3.4 0 0 1 5 5L10 17.5a1.8 1.8 0 0 1-2.5-2.5L15 7.5"/></svg></button>
+          <button class="ic" id="send" aria-label="发送"><svg viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></svg></button>
+        </div>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<div id="sideBg" hidden></div>
+<aside id="side">
+  <div class="sh" id="shN"><span>对话</span><button class="ic" id="grpBtn" aria-label="新建小组"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM12 11v5M9.5 13.5h5"/></svg></button></div>
+  <div class="sh" id="shM" hidden><button class="ic" id="mX" aria-label="退出多选"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button><span id="mCnt">已选择 0 项</span><button class="tb" id="mAll">全选</button></div>
+  <div class="sh" id="shS" hidden><span>拖动手柄调整顺序</span><button class="tb" id="sDone">完成</button></div>
+  <div id="sideList"></div>
+  <div class="sb" id="sbN"><button class="tb" id="sSet">总设置</button><button class="tb" id="sWin">当前窗口设置</button></div>
+  <div class="sb" id="sbM" hidden><button class="tb" id="mMove">移动</button><button class="tb" id="mDel">删除</button></div>
+</aside>
+<div id="set" class="screen" hidden><div class="in">
+  <div class="bar"><button class="ic" id="setBack" aria-label="返回"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button><h2 id="setTitle">总设置</h2></div>
+  <div class="body">
+    <div id="setMain">
+      <h3>API</h3>
+      <div id="apiList"></div>
+      <button class="wide" id="apiAdd">添加 API</button>
+      <label class="sw"><input type="checkbox" id="stream"> 流式输出</label>
+    </div>
+    <div id="apiForm" hidden>
+      <label class="fld">名称<input id="fName" placeholder="例如：我的 Claude"></label>
+      <label class="fld">格式<select id="fFmt"><option value="anthropic">Anthropic</option><option value="openai">OpenAI 兼容</option></select></label>
+      <label class="fld">接口地址<input id="fUrl" inputmode="url" autocapitalize="off" autocomplete="off"></label>
+      <label class="fld">密钥（只保存在本机）<input id="fKey" type="password" autocomplete="off"></label>
+      <button class="wide main" id="bSave">保存</button>
+      <button class="wide" id="bDel">删除</button>
+    </div>
+  </div></div></div>
+<div id="win" class="screen" hidden><div class="in">
+  <div class="bar"><button class="ic" id="winBack" aria-label="返回"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button><h2>当前窗口设置</h2></div>
+  <div class="tabs"><button class="tab on" data-t="base">基础设置</button><button class="tab" data-t="mem">记忆</button></div>
+  <div class="body">
+    <div id="winBase">
+      <label class="fld">对话名称<input id="wName"></label>
+      <label class="fld">提示词<textarea id="wPrompt" rows="6"></textarea></label>
+      <label class="fld">每次发送保留最近几对对话（0 表示全部）<input id="wKeep" type="number" min="0" inputmode="numeric"></label>
+      <p class="hint">完整记录始终保存在本地，这里只决定每次发送多少。</p>
+      <label class="fld" style="margin-top:14px">在几对对话后提示总结（0 表示不提示）<input id="wEvery" type="number" min="0" inputmode="numeric"></label>
+      <label class="fld">记忆使用的 API<select id="wMemApi"></select></label>
+      <label class="fld">记忆使用的模型<input id="wMemModel" list="mdl" autocomplete="off"><datalist id="mdl"></datalist></label>
+      <label class="fld">总结提示词<textarea id="wSumPrompt" rows="5"></textarea></label>
+    </div>
+    <div id="winMem" hidden>
+      <p class="hint" id="memInfo"></p>
+      <button class="wide" id="memNow">立即总结</button>
+      <div id="memList"></div>
+    </div>
+  </div></div></div>
+<div id="memEd" class="screen" hidden><div class="in">
+  <div class="bar"><button class="ic" id="edBack" aria-label="返回"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button><h2 id="edTitle"></h2></div>
+  <div class="body">
+    <textarea id="edText"></textarea>
+    <button class="wide main" id="edSave">保存</button>
+    <button class="wide" id="edDel">删除</button>
+  </div></div></div>
+<div id="sumDlg" hidden><div class="card">
+  <h3 id="dTitle"></h3>
+  <p class="hint" id="dMsg"></p>
+  <textarea id="dText" hidden></textarea>
+  <div class="dbtn" id="dBtns"></div>
+</div></div>
+<div id="queue" class="screen" hidden><div class="in">
+  <div class="bar"><button class="ic" id="qBack" aria-label="返回"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button><h2>发送队列</h2></div>
+  <div class="body">
+    <p class="hint">下次发送时会带上的内容，按顺序排列；关掉开关就不发送这一块。你接下来的消息会接在历史后面。</p>
+    <div id="qList"></div>
+    <p class="hint" id="qTotal"></p>
+  </div></div></div>
+<div id="sheet" hidden>
+  <div class="panel">
+    <h2>存档</h2>
+    <p id="status"></p>
+    <div class="row" id="fileRow">
+      <button class="main" id="bNew">新建存档文件</button>
+      <button id="bOpen">打开存档文件</button>
+      <button id="bAuth">授权自动保存</button>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button id="bExport">导出 JSON</button>
+      <button id="bImport">导入 JSON</button>
+    </div>
+    <p style="margin:12px 0 0">API 密钥只保存在本浏览器，不会写进存档文件和导出文件。</p>
+  </div>
+</div>
+<input type="file" id="fileIn" accept=".json,application/json" hidden>
+<div id="toast"></div>
+
+<script>
+const $=s=>document.querySelector(s);
+const FS='showSaveFilePicker' in window;
+const PICK={types:[{description:'JSON',accept:{'application/json':['.json']}}]};
+let state,handle=null,granted=false,timer=null,lastSaved=0;
+
+/* IndexedDB: 工作副本和文件句柄 */
+const idb=()=>new Promise((res,rej)=>{const r=indexedDB.open('chatfront',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
+async function kvGet(k){const d=await idb();return new Promise((res,rej)=>{const q=d.transaction('kv').objectStore('kv').get(k);q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)})}
+async function kvSet(k,v){const d=await idb();return new Promise((res,rej)=>{const t=d.transaction('kv','readwrite');t.objectStore('kv').put(v,k);t.oncomplete=res;t.onerror=()=>rej(t.error)})}
+
+/* 数据 */
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+function fresh(){const id=uid();return{v:1,updatedAt:Date.now(),currentId:id,sessions:[{id,title:'新对话',messages:[]}]}}
+const valid=d=>d&&Array.isArray(d.sessions)&&d.sessions.length&&d.currentId&&typeof d.updatedAt==='number';
+const cur=()=>sc(state.sessions.find(s=>s.id===state.currentId)||state.sessions[0]);
+
+function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on'),2200)}
+
+/* 保存 */
+function touch(){state.updatedAt=Date.now();kvSet('state',state);clearTimeout(timer);timer=setTimeout(writeFile,1000);setStatus()}
+async function writeFile(){
+  clearTimeout(timer);
+  if(!handle||!granted)return;
+  try{const w=await handle.createWritable();await w.write(JSON.stringify(state));await w.close();lastSaved=Date.now()}
+  catch(e){granted=false;toast('写入存档失败，请重新授权')}
+  setStatus();
+}
+async function checkPerm(){
+  if(!handle)return;
+  try{granted=(await handle.queryPermission({mode:'readwrite'}))==='granted'}catch(e){granted=false}
+}
+async function syncFromFile(){
+  try{
+    const t=await(await handle.getFile()).text();
+    if(t.trim()){
+      const d=JSON.parse(t);
+      if(valid(d)&&d.updatedAt>state.updatedAt){state=d;await kvSet('state',state);render();toast('已读取存档');setStatus();return}
+    }
+  }catch(e){toast('存档文件读取失败')}
+  await writeFile();
+}
+async function authorize(){
+  if(!handle)return;
+  try{granted=(await handle.requestPermission({mode:'readwrite'}))==='granted'}catch(e){granted=false}
+  if(granted)await syncFromFile();else toast('未获得授权');
+  setStatus();
+}
+async function newFile(){
+  try{
+    handle=await showSaveFilePicker({suggestedName:'chat-data.json',...PICK});
+    granted=true;await kvSet('handle',handle);await writeFile();toast('已创建存档文件');
+  }catch(e){if(e.name!=='AbortError')toast('创建失败：'+e.message)}
+  setStatus();
+}
+async function openFile(){
+  try{
+    [handle]=await showOpenFilePicker(PICK);
+    await kvSet('handle',handle);await authorize();
+  }catch(e){if(e.name!=='AbortError')toast('打开失败：'+e.message)}
+  setStatus();
+}
+function exportJSON(){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(state)],{type:'application/json'}));
+  a.download='chat-data-'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+async function importJSON(file){
+  try{
+    const d=JSON.parse(await file.text());
+    if(!valid(d))throw 0;
+    if(!confirm('导入会替换当前所有对话，继续吗？'))return;
+    state=d;touch();render();toast('已导入');
+  }catch(e){toast('文件格式不对，无法导入')}
+}
+
+/* 状态显示 */
+function setStatus(){
+  const hm=lastSaved?new Date(lastSaved).toTimeString().slice(0,5):'';
+  let s,n=null;
+  if(!FS)s='此浏览器不支持文件存档，数据只保存在浏览器内，请定期导出 JSON。';
+  else if(!handle){s='还没有存档文件，数据暂存在浏览器内。';n=['还没有存档文件','设置','sheet']}
+  else if(!granted){s='存档文件已连接，需要授权后才会自动保存。';n=['需要授权才能自动保存','授权','auth']}
+  else s='已连接存档文件，自动保存'+(hm?'，上次保存 '+hm:'')+'。';
+  $('#status').textContent=s;
+  $('#dot').classList.toggle('ok',FS&&granted);
+  $('#bNew').hidden=$('#bOpen').hidden=!FS;
+  $('#bAuth').hidden=!(FS&&handle&&!granted);
+  $('#notice').hidden=!n;
+  if(n){$('#noticeText').textContent=n[0];$('#noticeBtn').textContent=n[1];$('#noticeBtn').dataset.act=n[2]}
+}
+
+/* 界面 */
+let editing=null;
+function ib(label,path,fn){const b=document.createElement('button');b.className='ic';b.title=label;b.setAttribute('aria-label',label);b.innerHTML='<svg viewBox="0 0 24 24"><path d="'+path+'"/></svg>';b.onclick=fn;return b}
+function tb(label,fn,main){const b=document.createElement('button');b.className='tb'+(main?' main':'');b.textContent=label;b.onclick=fn;return b}
+function render(keep){
+  const s=cur(),l=$('#list'),y=l.scrollTop;
+  $('#title').textContent=s.title;document.title=s.title;
+  l.textContent='';
+  if(!s.messages.length){const e=document.createElement('div');e.className='empty';e.textContent='还没有消息。发送后会自动存档。';l.append(e);return}
+  for(const m of s.messages){
+    const r=document.createElement('div');r.className='r '+m.role;
+    if(m.id===editing){
+      r.classList.add('editing');
+      const ta=document.createElement('textarea');ta.className='ed';ta.value=m.content;
+      const fitEd=()=>{ta.style.height='auto';ta.style.height=ta.scrollHeight+'px'};
+      ta.oninput=fitEd;
+      const a=document.createElement('div');a.className='acts';
+      a.append(tb('保存',()=>saveEdit(m,ta.value),true),tb('取消',()=>{editing=null;render(true)}));
+      r.append(ta,a);l.append(r);
+      requestAnimationFrame(()=>{fitEd();ta.focus()});
+      continue;
+    }
+    const d=document.createElement('div');d.className='m '+m.role;d.textContent=m.content||'…';r.append(d);
+    if(!ctrl&&m.content){
+      const a=document.createElement('div');a.className='acts';
+      if(m.role==='assistant')a.append(ib('重新生成','M20 11a8 8 0 1 0-2.3 5.7M20 5v6h-6',()=>regen(m)));
+      a.append(ib('编辑','M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4',()=>{editing=m.id;render(true)}));
+      a.append(ib('删除','M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13M10 11v6M14 11v6',()=>delMsg(m)));
+      r.append(a);
+    }
+    l.append(r);
+  }
+  l.scrollTop=keep?y:l.scrollHeight;
+}
+function saveEdit(m,v){v=v.trim();if(!v){toast('内容不能为空，想去掉请用删除');return}m.content=v;editing=null;touch();render(true)}
+function delMsg(m){
+  if(ctrl||!confirm('删除这条消息？'))return;
+  const s=cur();s.messages.splice(s.messages.indexOf(m),1);touch();render(true);
+}
+async function regen(m){
+  if(ctrl)return;
+  const s=cur(),i=s.messages.indexOf(m),prev=s.messages[i-1];
+  if(!prev||prev.role!=='user'){toast('这条回复前面不是用户消息，无法重新生成');return}
+  const sel=pickSel();if(!sel)return;
+  if(i<s.messages.length-1&&!confirm('重新生成会删除这条之后的所有消息，继续吗？'))return;
+  await run(sel.api,sel.model,s,s.messages.splice(i));
+}
+
+/* ===== API、发送、流式 ===== */
+const LS=(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k));return v==null?d:v}catch(e){return d}};
+const LSset=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+const apis=()=>LS('cf_apis',[]);
+const getStream=()=>LS('cf_stream',true);
+const NETERR='网络请求失败：地址有误，或该接口不允许浏览器直连';
+const SEND_ICON='<svg viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></svg>';
+const STOP_ICON='<svg viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2" style="fill:currentColor"/></svg>';
+let ctrl=null;
+const root=a=>a.url.trim().replace(/\/+$/,'');
+const anURL=(a,p)=>root(a).replace(/\/v1$/,'')+'/v1/'+p;
+const headersOf=a=>a.fmt==='anthropic'?{'x-api-key':a.key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'}:{authorization:'Bearer '+a.key};
+
+async function fetchModels(a){
+  const an=a.fmt==='anthropic';let r;
+  try{r=await fetch(an?anURL(a,'models?limit=1000'):root(a)+'/models',{headers:headersOf(a)})}catch(e){throw new Error(NETERR)}
+  if(!r.ok)throw new Error('获取模型失败 '+r.status);
+  const j=await r.json();return(j.data||[]).map(m=>m.id).filter(Boolean);
+}
+async function sse(r,fn){
+  const rd=r.body.getReader(),dc=new TextDecoder();let buf='';
+  for(;;){
+    const{done,value}=await rd.read();if(done)break;
+    buf+=dc.decode(value,{stream:true});
+    let k;
+    while((k=buf.indexOf('\n'))>=0){
+      const line=buf.slice(0,k).replace(/\r$/,'');buf=buf.slice(k+1);
+      if(!line.startsWith('data:'))continue;
+      const d=line.slice(5).trim();if(!d||d==='[DONE]')continue;
+      let j;try{j=JSON.parse(d)}catch(e){continue}
+      fn(j);
+    }
+  }
+}
+async function chat(a,model,msgs,signal,onTx,system){
+  const an=a.fmt==='anthropic',stream=getStream();
+  const url=an?anURL(a,'messages'):root(a)+'/chat/completions';
+  const body=an?{model,max_tokens:4096,messages:msgs,stream}:{model,messages:system?[{role:'system',content:system},...msgs]:msgs,stream};
+  if(an&&system)body.system=system;
+  let r;
+  try{r=await fetch(url,{method:'POST',headers:{'content-type':'application/json',...headersOf(a)},body:JSON.stringify(body),signal})}
+  catch(e){if(e.name==='AbortError')throw e;throw new Error(NETERR)}
+  if(!r.ok)throw new Error('请求失败 '+r.status+'：'+(await r.text()).slice(0,150));
+  if(stream){
+    await sse(r,j=>{
+      if(an){
+        if(j.type==='content_block_delta'&&j.delta&&j.delta.text)onTx(j.delta.text);
+        else if(j.type==='error')throw new Error((j.error&&j.error.message)||'接口返回错误');
+      }else{const t=j.choices&&j.choices[0]&&j.choices[0].delta&&j.choices[0].delta.content;if(t)onTx(t)}
+    });
+  }else{
+    const j=await r.json();
+    onTx(an?(j.content||[]).map(c=>c.text||'').join(''):((j.choices&&j.choices[0]&&j.choices[0].message.content)||''));
+  }
+}
+function historyOf(arr){
+  const out=[];
+  for(const m of arr){
+    if(!m.content)continue;
+    const l=out[out.length-1];
+    if(l&&l.role===m.role)l.content+='\n\n'+m.content;else out.push({role:m.role,content:m.content});
+  }
+  return out;
+}
+function busy(b){$('#send').innerHTML=b?STOP_ICON:SEND_ICON;$('#send').setAttribute('aria-label',b?'停止生成':'发送')}
+function pickSel(){
+  const sel=LS('cf_sel',{}),api=apis().find(x=>x.id===sel.apiId);
+  if(!api||!sel.model){toast('请先在工具栏选择 API 和模型');return null}
+  return{api,model:sel.model};
+}
+async function run(api,model,s,old){
+  const a={id:uid(),role:'assistant',content:'',ts:Date.now()};
+  s.messages.push(a);ctrl=new AbortController();busy(true);touch();render();
+  const el=$('#list').lastChild.querySelector('.m'),{system,msgs}=plan(s,a);
+  let ok=false;
+  try{await chat(api,model,msgs,ctrl.signal,x=>{a.content+=x;el.textContent=a.content;$('#list').scrollTop=1e9},system);ok=true}
+  catch(e){if(e.name!=='AbortError')toast(e.message)}
+  ctrl=null;busy(false);
+  if(!a.content){s.messages.splice(s.messages.indexOf(a),1);if(old)s.messages.push(...old)}
+  touch();render();
+  if(ok&&a.content&&cur()===s)checkSum(s);
+}
+async function send(){
+  if(ctrl){ctrl.abort();return}
+  const i=$('#input'),t=i.value.trim();if(!t)return;
+  const sel=pickSel();if(!sel)return;
+  const s=cur();if(!s.messages.length&&s.title==='新对话')s.title=t.replace(/\s+/g,' ').slice(0,16);s.messages.push({id:uid(),role:'user',content:t,ts:Date.now()});
+  i.value='';fit();
+  await run(sel.api,sel.model,s);
+}
+
+/* 工具栏：选 API → 选模型 */
+function item(t,fn,sub){const b=document.createElement('button');b.className='pi';b.textContent=t;if(sub){const e=document.createElement('small');e.textContent=sub;b.append(e)}b.onclick=fn;return b}
+const fmtName=a=>a.fmt==='anthropic'?'Anthropic':'OpenAI 兼容';
+function updateLabel(){const s=LS('cf_sel',{}),a=apis().find(x=>x.id===s.apiId);$('#selLabel').textContent=a&&s.model?s.model:''}
+function closePick(){$('#pick').hidden=$('#pickBg').hidden=true}
+function choose(a,m){LSset('cf_sel',{apiId:a.id,model:m});updateLabel();closePick()}
+function openPick(){
+  const L=apis(),p=$('#pick');p.textContent='';
+  if(!L.length)p.append(item('还没有 API，点这里去添加',()=>{closePick();openSet()}));
+  else L.forEach(a=>p.append(item(a.name,()=>pickModels(a),fmtName(a))));
+  p.hidden=$('#pickBg').hidden=false;
+}
+async function pickModels(a){
+  const p=$('#pick');p.textContent='';
+  p.append(item('← '+a.name,openPick));
+  const st=document.createElement('div');st.className='pn';st.textContent='正在获取模型…';p.append(st);
+  let ms=[],err='';
+  try{ms=await fetchModels(a)}catch(e){err=e.message}
+  st.remove();
+  ms.forEach(m=>p.append(item(m,()=>choose(a,m))));
+  if(!ms.length){
+    const n=document.createElement('div');n.className='pn';n.textContent=err||'没有获取到模型，可以手动输入模型名';p.append(n);
+    const w=document.createElement('div');w.className='pn';
+    const inp=document.createElement('input');inp.placeholder='模型名';
+    const ok=item('使用',()=>{if(inp.value.trim())choose(a,inp.value.trim())});ok.style.width='auto';
+    w.append(inp,ok);p.append(w);
+  }
+}
+$('#apiBtn').onclick=openPick;$('#pickBg').onclick=closePick;
+
+/* 总设置 → API */
+let editId=null;
+function openSet(){$('#stream').checked=getStream();showMain();$('#set').hidden=false}
+function showMain(){
+  $('#setMain').hidden=false;$('#apiForm').hidden=true;$('#setTitle').textContent='总设置';
+  const l=$('#apiList');l.textContent='';const L=apis();
+  if(!L.length){const e=document.createElement('p');e.className='hint';e.textContent='还没有 API。';l.append(e)}
+  L.forEach(a=>l.append(item(a.name,()=>editApi(a),fmtName(a))));
+}
+function fmtHint(){$('#fUrl').placeholder=$('#fFmt').value==='anthropic'?'https://api.anthropic.com':'https://api.openai.com/v1'}
+function editApi(a){
+  editId=a?a.id:null;$('#setMain').hidden=true;$('#apiForm').hidden=false;
+  $('#setTitle').textContent=a?'编辑 API':'添加 API';
+  $('#fName').value=a?a.name:'';$('#fFmt').value=a?a.fmt:'anthropic';$('#fUrl').value=a?a.url:'';$('#fKey').value=a?a.key:'';
+  $('#bDel').hidden=!a;fmtHint();
+}
+$('#apiAdd').onclick=()=>editApi(null);
+$('#fFmt').onchange=fmtHint;
+$('#stream').onchange=e=>LSset('cf_stream',e.target.checked);
+$('#setBack').onclick=()=>$('#apiForm').hidden?($('#set').hidden=true):showMain();
+$('#bSave').onclick=()=>{
+  const L=apis(),u=$('#fUrl').value.trim(),k=$('#fKey').value.trim();
+  if(!u||!k){toast('接口地址和密钥都要填');return}
+  const o={id:editId||uid(),name:$('#fName').value.trim()||'API '+(L.length+1),fmt:$('#fFmt').value,url:u,key:k};
+  const x=L.findIndex(v=>v.id===o.id);if(x>=0)L[x]=o;else L.push(o);
+  LSset('cf_apis',L);updateLabel();showMain();
+};
+$('#bDel').onclick=()=>{
+  if(!confirm('删除这个 API？'))return;
+  LSset('cf_apis',apis().filter(v=>v.id!==editId));updateLabel();showMain();
+};
+updateLabel();
+/* ===== 窗口设置、发送队列 ===== */
+function sc(c){if(!c.q)c.q={p:true,m:true,h:true};if(!c.memories)c.memories=[];if(c.prompt==null)c.prompt='';if(c.keep==null)c.keep=0;return c}
+const memText=c=>c.memories.filter(m=>m.on).map(m=>m.text).join('\n\n');
+function histSlice(list,n){
+  if(!n)return list;let k=0;
+  for(let i=list.length-1;i>=0;i--)if(list[i].role==='user'&&++k===n)return list.slice(i);
+  return list;
+}
+function plan(c,skip){
+  const q=c.q,all=c.messages.filter(m=>m!==skip&&m.content);
+  const msgs=historyOf(histSlice(all,q.h?(c.keep?c.keep+1:0):1));
+  const mem=memText(c);
+  const system=[q.p?c.prompt.trim():'',q.m&&mem?'以下是此前对话的总结：\n'+mem:''].filter(Boolean).join('\n\n');
+  return{system,msgs};
+}
+const DEF_SUM='请总结以下对话：保留人物、事件、设定、关系变化和尚未解决的事项，用简洁的条目写出，供之后的对话参考。';
+function openWin(){
+  const c=cur();
+  $('#wName').value=c.title;$('#wPrompt').value=c.prompt;$('#wKeep').value=c.keep||0;
+  $('#wEvery').value=c.every||0;$('#wMemModel').value=c.memModel||'';
+  $('#wSumPrompt').value=c.sumPrompt||'';$('#wSumPrompt').placeholder=DEF_SUM;
+  const sel=$('#wMemApi');sel.textContent='';
+  const o0=document.createElement('option');o0.value='';o0.textContent='使用工具栏当前选择';sel.append(o0);
+  for(const a of apis()){const o=document.createElement('option');o.value=a.id;o.textContent=a.name;sel.append(o)}
+  sel.value=c.memApi||'';if(sel.value!==(c.memApi||''))sel.value='';
+  loadModels();winTab('base');
+  $('#win').hidden=false;
+}
+async function loadModels(){
+  const dl=$('#mdl');dl.textContent='';const a=apis().find(x=>x.id===cur().memApi);if(!a)return;
+  try{(await fetchModels(a)).forEach(m=>{const o=document.createElement('option');o.value=m;dl.append(o)})}catch(e){}
+}
+function winTab(t){
+  document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
+  $('#winBase').hidden=t!=='base';$('#winMem').hidden=t!=='mem';
+  if(t==='mem')renderMem();
+}
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>winTab(b.dataset.t));
+$('#wEvery').oninput=e=>{const n=parseInt(e.target.value,10);cur().every=n>0?n:0;touch()};
+$('#wMemApi').onchange=e=>{cur().memApi=e.target.value;touch();loadModels()};
+$('#wMemModel').oninput=e=>{cur().memModel=e.target.value.trim();touch()};
+$('#wSumPrompt').oninput=e=>{cur().sumPrompt=e.target.value;touch()};
+
+/* ===== 记忆与自动总结 ===== */
+const rangeMsgs=c=>c.messages.filter(m=>m.content&&m.ts>(c.sumTs||0));
+const pairsSince=c=>rangeMsgs(c).filter(m=>m.role==='assistant').length;
+function renderMem(){
+  const c=cur(),l=$('#memList');l.textContent='';
+  $('#memInfo').textContent='距上次总结已有 '+pairsSince(c)+' 对对话。';
+  if(!c.memories.length){const p=document.createElement('p');p.className='hint';p.textContent='还没有总结。';l.append(p)}
+  for(const m of c.memories){
+    const r=document.createElement('div');r.className='mi'+(m.on?'':' off');
+    const b=document.createElement('button');b.className='mt';
+    const t=document.createElement('span');t.className='a';t.textContent=m.title;
+    const v=document.createElement('span');v.className='b';v.textContent=m.text.replace(/\s+/g,' ').slice(0,40);
+    b.append(t,v);b.onclick=()=>editMem(m);
+    const x=document.createElement('input');x.type='checkbox';x.checked=m.on;x.setAttribute('aria-label','发送'+m.title);
+    x.onchange=()=>{m.on=x.checked;r.classList.toggle('off',!m.on);touch()};
+    r.append(b,x);l.append(r);
+  }
+}
+let edM=null;
+function editMem(m){edM=m;$('#edTitle').textContent=m.title;$('#edText').value=m.text;$('#memEd').hidden=false}
+$('#edBack').onclick=()=>$('#memEd').hidden=true;
+$('#edSave').onclick=()=>{
+  const v=$('#edText').value.trim();if(!v){toast('内容不能为空，想去掉请用删除');return}
+  edM.text=v;touch();$('#memEd').hidden=true;renderMem();
+};
+$('#edDel').onclick=()=>{
+  if(!confirm('删除「'+edM.title+'」？'))return;
+  const c=cur();c.memories=c.memories.filter(m=>m!==edM);touch();$('#memEd').hidden=true;renderMem();
+};
+$('#memNow').onclick=()=>{
+  const c=cur();
+  if(ctrl){toast(BUSY_MSG);return}
+  if(!rangeMsgs(c).length){toast('没有需要总结的新对话');return}
+  runSum(c);
+};
+
+const dlg=$('#sumDlg');let dlgCtrl=null;
+function dShow(title,msg,btns,showText){
+  $('#dTitle').textContent=title;$('#dMsg').textContent=msg;$('#dMsg').hidden=!msg;
+  $('#dText').hidden=!showText;
+  const r=$('#dBtns');r.textContent='';btns.forEach(b=>r.append(b));
+  dlg.hidden=false;$('#input').disabled=true;
+}
+function dClose(){dlg.hidden=true;$('#input').disabled=false}
+function checkSum(c){
+  const e=c.every||0;if(!(e>0))return;
+  const n=pairsSince(c);
+  if(n-(c.snooze||0)>=e)dShow('需要总结吗？','最近 '+n+' 对对话还没有总结。',[tb('开始总结',()=>runSum(c),true),tb('稍后',()=>{c.snooze=pairsSince(c);touch();dClose()})],false);
+}
+function sumSel(c){
+  const a=apis().find(x=>x.id===c.memApi);
+  if(a&&c.memModel)return{api:a,model:c.memModel};
+  const sel=LS('cf_sel',{}),b=apis().find(x=>x.id===sel.apiId);
+  return b&&sel.model?{api:b,model:sel.model}:null;
+}
+async function runSum(c){
+  const sel=sumSel(c),text=rangeMsgs(c).map(m=>(m.role==='user'?'用户：':'助手：')+m.content).join('\n\n');
+  if(!sel){dShow('无法总结','请先选好记忆使用的 API 和模型，或在工具栏选择 API。',[tb('关闭',dClose,true)],false);return}
+  if(!text){dShow('无法总结','没有需要总结的新对话。',[tb('关闭',dClose,true)],false);return}
+  const ta=$('#dText');ta.value='';ta.readOnly=true;
+  dlgCtrl=new AbortController();
+  dShow('正在总结…','',[tb('停止',()=>dlgCtrl&&dlgCtrl.abort())],true);
+  let err='';
+  try{await chat(sel.api,sel.model,[{role:'user',content:text}],dlgCtrl.signal,x=>{ta.value+=x;ta.scrollTop=ta.scrollHeight},(c.sumPrompt||'').trim()||DEF_SUM)}
+  catch(e){if(e.name!=='AbortError')err=e.message}
+  dlgCtrl=null;ta.readOnly=false;
+  if(err)dShow('总结失败',err,[tb('重试',()=>runSum(c),true),tb('放弃',dClose)],false);
+  else if(!ta.value.trim())dShow('已停止','',[tb('重新总结',()=>runSum(c),true),tb('放弃',dClose)],false);
+  else dShow('总结完成，可以修改','',[tb('确认保存',()=>saveSum(c),true),tb('重新生成',()=>runSum(c)),tb('放弃',dClose)],true);
+}
+function saveSum(c){
+  const t=$('#dText').value.trim();if(!t){toast('总结不能为空');return}
+  c.sumN=(c.sumN||0)+1;
+  const last=rangeMsgs(c).reduce((a,m)=>Math.max(a,m.ts),c.sumTs||0);
+  c.memories.push({id:uid(),title:'总结'+c.sumN,text:t,on:true});
+  c.sumTs=last;c.snooze=0;touch();dClose();renderMem();toast('已保存为「总结'+c.sumN+'」');
+}
+$('#wName').oninput=e=>{const v=e.target.value.trim();if(!v)return;cur().title=v;touch();render(true)};
+$('#wName').onchange=e=>{if(!e.target.value.trim())e.target.value=cur().title};
+$('#wPrompt').oninput=e=>{cur().prompt=e.target.value;touch()};
+$('#wKeep').oninput=e=>{const n=parseInt(e.target.value,10);cur().keep=n>0?n:0;touch()};
+$('#winBack').onclick=()=>$('#win').hidden=true;
+
+function openQueue(){
+  const c=cur(),l=$('#qList');l.textContent='';
+  const all=c.messages.filter(m=>m.content),hist=historyOf(histSlice(all,c.keep||0));
+  const mem=memText(c),pr=c.prompt.trim();
+  const size={p:pr.length,m:mem.length,h:hist.reduce((n,m)=>n+m.content.length,0)};
+  const total=()=>{$('#qTotal').textContent='合计约 '+['p','m','h'].reduce((n,k)=>n+(c.q[k]?size[k]:0),0)+' 字（不含你的下一条消息）'};
+  const block=(k,title,info,fill)=>{
+    const d=document.createElement('details');d.className='qb'+(c.q[k]?'':' off');
+    const sm=document.createElement('summary');
+    const t=document.createElement('span');t.className='t';t.textContent=title;
+    const n=document.createElement('span');n.className='n';n.textContent=info;
+    const x=document.createElement('input');x.type='checkbox';x.checked=c.q[k];x.setAttribute('aria-label','发送'+title);
+    x.onchange=()=>{c.q[k]=x.checked;d.classList.toggle('off',!x.checked);touch();total()};
+    sm.append(t,n,x);
+    const b=document.createElement('div');b.className='qc';fill(b);
+    d.append(sm,b);l.append(d);
+  };
+  block('p','提示词',pr?size.p+' 字':'未设置',b=>{b.textContent=pr||'还没有提示词，可在“当前窗口设置”里填写。'});
+  const on=c.memories.filter(m=>m.on).length;
+  block('m','记忆',mem?on+' 条，'+size.m+' 字':'暂无',b=>{b.textContent=mem||'还没有记忆。'});
+  block('h','历史记录',hist.length+' 条消息，'+size.h+' 字',b=>{
+    if(!hist.length){b.textContent='还没有历史。';return}
+    for(const m of hist){const r=document.createElement('div');r.className='qm';const w=document.createElement('b');w.textContent=m.role==='user'?'你':'AI';r.append(w,m.content);b.append(r)}
+  });
+  total();$('#queue').hidden=false;
+}
+$('#qBtn').onclick=openQueue;
+$('#qBack').onclick=()=>$('#queue').hidden=true;
+
+/* ===== 会话 ===== */
+function openSide(){renderSide();$('#side').classList.add('on');$('#sideBg').hidden=false}
+function closeSide(){$('#side').classList.remove('on');$('#sideBg').hidden=true;closePop();mode=null;msel.clear()}
+function closePop(){document.querySelectorAll('#pop,#popBg').forEach(e=>e.remove())}
+function popMenu(anchor,items){
+  closePop();
+  const bg=document.createElement('div');bg.id='popBg';bg.onclick=closePop;
+  const m=document.createElement('div');m.id='pop';
+  items.forEach(([t,fn])=>{const b=document.createElement('button');b.className='pi';b.textContent=t;b.onclick=()=>{closePop();fn()};m.append(b)});
+  document.body.append(bg,m);
+  const r=anchor.getBoundingClientRect(),h=m.offsetHeight;
+  m.style.left=Math.max(8,Math.min(r.left+12,innerWidth-m.offsetWidth-8))+'px';
+  m.style.top=(r.top>h+8?r.top-h-4:r.bottom+4)+'px';
+}
+function longPress(el,fn){
+  let t=null,x=0,y=0,fired=false;
+  const stop=()=>clearTimeout(t);
+  el.addEventListener('pointerdown',e=>{fired=false;x=e.clientX;y=e.clientY;t=setTimeout(()=>{fired=true;fn(e)},450)});
+  el.addEventListener('pointermove',e=>{if(Math.abs(e.clientX-x)>8||Math.abs(e.clientY-y)>8)stop()});
+  el.addEventListener('pointerup',stop);el.addEventListener('pointercancel',stop);
+  el.addEventListener('contextmenu',e=>e.preventDefault());
+  el.addEventListener('click',e=>{if(fired){e.stopImmediatePropagation();e.preventDefault();fired=false}},true);
+}
+let mode=null;const msel=new Set();
+const CHEV='<svg class="chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>';
+const HANDLE='<svg viewBox="0 0 24 24"><path d="M5 9h14M5 15h14"/></svg>';
+const allIds=()=>[...(state.groups||[]).map(g=>g.id),...state.sessions.map(c=>c.id)];
+const allSel=()=>{const a=allIds();return a.length>0&&a.every(id=>msel.has(id))};
+function mkRow(kind,o,title,count){
+  const r=document.createElement('div');
+  r.className='it'+(kind==='g'?' grp':'')+(kind==='s'&&o.id===state.currentId?' cur':'');
+  if(mode==='multi'){const x=document.createElement('input');x.type='checkbox';x.checked=msel.has(o.id);x.tabIndex=-1;x.style.pointerEvents='none';r.append(x)}
+  if(kind==='g'){
+    r.insertAdjacentHTML('beforeend',CHEV);const ch=r.lastElementChild;ch.classList.toggle('open',!!o.open);
+    ch.onclick=e=>{if(mode==='multi'){e.stopPropagation();o.open=!o.open;touch();renderSide()}};
+  }
+  const t=document.createElement('span');t.className='tt';t.textContent=title;r.append(t);
+  if(kind==='g'){const n=document.createElement('small');n.textContent=count;r.append(n)}
+  if(mode==='sort'){const h=document.createElement('span');h.className='hd';h.innerHTML=HANDLE;r.append(h)}
+  r.onclick=()=>{
+    if(mode==='sort')return;
+    if(mode==='multi'){toggleSel(o.id);return}
+    if(kind==='s')switchTo(o.id);else{o.open=!o.open;touch();renderSide()}
+  };
+  return r;
+}
+function renderSide(){
+  state.groups=state.groups||[];
+  const L=$('#sideList'),y=L.scrollTop;L.textContent='';
+  $('#shN').hidden=mode!==null;$('#shM').hidden=mode!=='multi';$('#shS').hidden=mode!=='sort';
+  $('#sbN').hidden=mode==='multi';$('#sbM').hidden=mode!=='multi';
+  const sessOf=g=>state.sessions.filter(c=>(c.group||null)===g);
+  const addSess=(par,c)=>{
+    const r=mkRow('s',c,c.title);r.dataset.id=c.id;
+    if(mode===null)longPress(r,()=>popMenu(r,[['多选',()=>startMulti(c.id)],['重命名',()=>renameChat(c)],['排序',()=>{mode='sort';renderSide()}],['复制',()=>copyChat(c)],['移动到',()=>popMenu(r,folderItems([c.id]))],['删除',()=>deleteChat(c)]]));
+    if(mode==='sort')dragSort(r.querySelector('.hd'),r);
+    par.append(r);
+  };
+  const gl=document.createElement('div');gl.id='gList';
+  for(const g of state.groups){
+    const gb=document.createElement('div');gb.className='gb';gb.dataset.id=g.id;
+    const kids=sessOf(g.id),r=mkRow('g',g,g.name,kids.length);
+    if(mode===null)longPress(r,()=>popMenu(r,[['多选',()=>startMulti(g.id)],['重命名',()=>renameGroup(g)]]));
+    if(mode==='sort')dragSort(r.querySelector('.hd'),gb);
+    gb.append(r);
+    if(g.open){const gc=document.createElement('div');gc.className='gc';gc.dataset.gid=g.id;kids.forEach(c=>addSess(gc,c));gb.append(gc)}
+    gl.append(gb);
+  }
+  const ul=document.createElement('div');ul.id='uList';ul.dataset.gid='';
+  sessOf(null).forEach(c=>addSess(ul,c));
+  L.append(gl,ul);L.scrollTop=y;
+  if(mode==='multi'){$('#mCnt').textContent='已选择 '+msel.size+' 项';$('#mAll').textContent=allSel()?'取消全选':'全选'}
+}
+function toggleSel(id){if(msel.has(id))msel.delete(id);else msel.add(id);renderSide()}
+function startMulti(id){mode='multi';msel.clear();if(id)msel.add(id);renderSide()}
+function exitMode(){mode=null;msel.clear();renderSide()}
+function dragSort(handle,item){
+  handle.addEventListener('pointerdown',e=>{
+    e.preventDefault();handle.setPointerCapture(e.pointerId);item.classList.add('drag');
+    const par=item.parentElement;
+    const move=ev=>{
+      for(const sb of par.children){
+        if(sb===item)continue;
+        const r=sb.getBoundingClientRect();
+        if(ev.clientY<r.top||ev.clientY>r.bottom)continue;
+        const after=item.compareDocumentPosition(sb)&Node.DOCUMENT_POSITION_FOLLOWING,mid=r.top+r.height/2;
+        if(after&&ev.clientY>mid)sb.after(item);else if(!after&&ev.clientY<mid)sb.before(item);
+        break;
+      }
+    };
+    const up=()=>{
+      handle.removeEventListener('pointermove',move);handle.removeEventListener('pointerup',up);handle.removeEventListener('pointercancel',up);
+      item.classList.remove('drag');commitOrder(par);
+    };
+    handle.addEventListener('pointermove',move);handle.addEventListener('pointerup',up);handle.addEventListener('pointercancel',up);
+  });
+}
+function commitOrder(par){
+  const ids=[...par.children].map(x=>x.dataset.id);
+  if(par.id==='gList')state.groups.sort((a,b)=>ids.indexOf(a.id)-ids.indexOf(b.id));
+  else{
+    const mine=ids.map(id=>state.sessions.find(c=>c.id===id)).filter(Boolean);
+    state.sessions=[...mine,...state.sessions.filter(c=>!ids.includes(c.id))];
+  }
+  touch();
+}
+function folderItems(ids){
+  return[['未分组',()=>moveTo(ids,null)],...(state.groups||[]).map(g=>[g.name,()=>moveTo(ids,g.id)])];
+}
+function moveTo(ids,gid){
+  for(const c of state.sessions)if(ids.includes(c.id)){if(gid)c.group=gid;else delete c.group}
+  const g=state.groups.find(x=>x.id===gid);if(g)g.open=true;
+  touch();if(mode==='multi')exitMode();else renderSide();
+  toast('已移动');
+}
+function copyChat(c){
+  if(ctrl){toast(BUSY_MSG);return}
+  const n=JSON.parse(JSON.stringify(c));n.id=uid();n.title=c.title+' 副本';
+  n.messages.forEach(m=>m.id=uid());(n.memories||[]).forEach(m=>m.id=uid());
+  state.sessions.splice(state.sessions.indexOf(c)+1,0,n);touch();renderSide();toast('已复制');
+}
+function renameGroup(g){
+  const v=prompt('重命名',g.name);if(v==null||!v.trim())return;
+  g.name=v.trim();touch();renderSide();
+}
+function deleteSelected(){
+  if(ctrl){toast(BUSY_MSG);return}
+  const ss=state.sessions.filter(c=>msel.has(c.id)),gs=state.groups.filter(g=>msel.has(g.id));
+  if(!ss.length&&!gs.length){toast('请先选择');return}
+  const msg=[ss.length?ss.length+' 个对话':'',gs.length?gs.length+' 个小组（组内未选中的对话会移到未分组）':''].filter(Boolean).join('、');
+  if(!confirm('删除 '+msg+'？'))return;
+  const gid=new Set(gs.map(g=>g.id));
+  state.sessions=state.sessions.filter(c=>!msel.has(c.id));
+  state.sessions.forEach(c=>{if(gid.has(c.group))delete c.group});
+  state.groups=state.groups.filter(g=>!gid.has(g.id));
+  if(!state.sessions.length)state.sessions.push({id:uid(),title:'新对话',messages:[]});
+  if(!state.sessions.some(c=>c.id===state.currentId)){state.currentId=state.sessions[0].id;editing=null}
+  touch();exitMode();render();
+}
+$('#grpBtn').onclick=()=>{
+  const v=prompt('小组名称');if(!v||!v.trim())return;
+  state.groups=state.groups||[];state.groups.push({id:uid(),name:v.trim(),open:true});touch();renderSide();
+};
+$('#mX').onclick=exitMode;$('#sDone').onclick=exitMode;
+$('#mAll').onclick=()=>{if(allSel())msel.clear();else allIds().forEach(id=>msel.add(id));renderSide()};
+$('#mMove').onclick=()=>{
+  const ids=state.sessions.filter(c=>msel.has(c.id)).map(c=>c.id);
+  if(!ids.length){toast('请先选择对话');return}
+  popMenu($('#mMove'),folderItems(ids));
+};
+$('#mDel').onclick=deleteSelected;
+const BUSY_MSG='正在生成，先停止再操作';
+function switchTo(id){if(ctrl){toast(BUSY_MSG);return}state.currentId=id;editing=null;touch();render();closeSide()}
+function newChat(){
+  if(ctrl){toast(BUSY_MSG);return}
+  if(!cur().messages.length){toast('当前已是空白对话');closeSide();return}
+  const c={id:uid(),title:'新对话',messages:[]};
+  state.sessions.unshift(c);state.currentId=c.id;editing=null;touch();render();closeSide();
+}
+function renameChat(c){
+  const v=prompt('重命名',c.title);if(v==null)return;
+  const t=v.trim();if(!t)return;
+  c.title=t;touch();render(true);renderSide();
+}
+function deleteChat(c){
+  if(ctrl){toast(BUSY_MSG);return}
+  if(!confirm('删除对话「'+c.title+'」？'))return;
+  state.sessions=state.sessions.filter(x=>x!==c);
+  if(!state.sessions.length)state.sessions.push({id:uid(),title:'新对话',messages:[]});
+  if(state.currentId===c.id){state.currentId=state.sessions[0].id;editing=null}
+  touch();render();renderSide();
+}
+$('#menuBtn').onclick=openSide;$('#sideBg').onclick=closeSide;$('#newBtn').onclick=newChat;
+$('#sSet').onclick=()=>{closeSide();openSet()};
+$('#sWin').onclick=()=>{closeSide();openWin()};
+function fit(){const i=$('#input');i.style.height='auto';i.style.height=Math.min(i.scrollHeight,160)+'px'}
+
+$('#send').onclick=send;
+$('#input').oninput=fit;
+$('#saveBtn').onclick=()=>$('#sheet').hidden=false;
+$('#sheet').onclick=e=>{if(e.target.id==='sheet')e.target.hidden=true};
+$('#noticeBtn').onclick=e=>e.target.dataset.act==='auth'?authorize():($('#sheet').hidden=false);
+$('#bNew').onclick=newFile;$('#bOpen').onclick=openFile;$('#bAuth').onclick=authorize;
+$('#bExport').onclick=exportJSON;
+$('#bImport').onclick=()=>$('#fileIn').click();
+$('#fileIn').onchange=e=>{const f=e.target.files[0];e.target.value='';if(f)importJSON(f)};
+document.querySelectorAll('[data-todo]').forEach(b=>b.onclick=()=>toast(b.dataset.todo));
+document.addEventListener('visibilitychange',()=>{if(document.hidden)writeFile()});
+
+/* 启动 */
+(async()=>{
+  try{state=await kvGet('state');handle=(await kvGet('handle'))||null}catch(e){}
+  if(!valid(state))state=fresh();
+  await checkPerm();
+  render();setStatus();
+  if(handle&&granted)await syncFromFile();
+})();
+</script>
+</body>
+</html>
