@@ -2,13 +2,13 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
 <title>对话</title>
 <style>
-:root{--bg:#f5f6f4;--sf:#fff;--ink:#1d2326;--mu:#6a7479;--ln:#dde1e0;--ac:#2f6f68;--on:#fff;--me:#2f6f68;--meT:#fff;--ok:#2e9e6b;--warn:#d99a21}
-@media(prefers-color-scheme:dark){:root{--bg:#121618;--sf:#1b2124;--ink:#e6ebea;--mu:#8a9697;--ln:#2a3235;--ac:#5fb3a8;--on:#0d1514;--me:#2c5c56;--meT:#e6ebea}}
+:root{--bg:#f5f6f4;--sf:#fff;--ink:#1d2326;--mu:#6a7479;--ln:#dde1e0;--ac:#2f6f68;--on:#fff;--me:#2f6f68;--meT:#fff;--ub:#e7edeb;--fs:16px;--ok:#2e9e6b;--warn:#d99a21}
+@media(prefers-color-scheme:dark){:root{--bg:#121618;--sf:#1b2124;--ink:#e6ebea;--mu:#8a9697;--ln:#2a3235;--ac:#5fb3a8;--on:#0d1514;--me:#2c5c56;--meT:#e6ebea;--ub:#222b2e}}
 *{box-sizing:border-box}
-html,body{height:100%;margin:0}
+html,body{height:100%;margin:0;overflow:hidden}
 body{background:var(--bg);color:var(--ink);font:16px/1.6 system-ui,-apple-system,"PingFang SC","Noto Sans SC","Microsoft YaHei",sans-serif}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 #app{height:100dvh;display:flex;flex-direction:column;max-width:820px;margin:0 auto;background:var(--bg)}
@@ -26,9 +26,11 @@ header h1{flex:1;margin:0 4px;font-size:17px;font-weight:600;white-space:nowrap;
 [hidden]{display:none!important}
 main{flex:1;overflow-y:auto;padding:16px 14px;display:flex;flex-direction:column;gap:12px}
 .empty{margin:auto;text-align:center;color:var(--mu);font-size:15px}
-.m{max-width:86%;padding:9px 13px;border-radius:14px;white-space:pre-wrap;word-break:break-word}
-.m.user{align-self:flex-end;background:var(--me);color:var(--meT);border-bottom-right-radius:4px}
-.m.assistant{align-self:flex-start;background:var(--sf);border:1px solid var(--ln);border-bottom-left-radius:4px}
+.m{padding:9px 13px;border-radius:12px;white-space:pre-wrap;word-break:break-word}
+.m.user{background:var(--ub);color:var(--ink)}
+.m.assistant{padding:2px 2px}
+.m,.ed,#input{font-size:var(--fs)}
+.fp{font-size:var(--fs);padding:8px 12px;border:1px solid var(--ln);border-radius:10px;background:var(--sf);margin-bottom:12px;color:var(--ink)}
 footer{padding:6px 10px max(8px,env(safe-area-inset-bottom))}
 .box{position:relative;background:var(--sf);border:1px solid var(--ln);border-radius:16px;padding:6px 6px 2px 12px}
 textarea{display:block;width:100%;border:0;outline:0;resize:none;background:none;color:var(--ink);font:inherit;max-height:120px;padding:2px 0;line-height:1.45}
@@ -46,7 +48,7 @@ textarea{display:block;width:100%;border:0;outline:0;resize:none;background:none
 .panel .row button{flex:1 1 40%;padding:11px 8px;border:1px solid var(--ln);border-radius:12px}
 .panel .row button:hover{background:var(--ln)}
 .panel .row button.main{background:var(--ac);color:var(--on);border-color:var(--ac)}
-#tk{position:absolute;left:12px;top:-10px;padding:1px 8px;border-radius:10px;font-size:11px;line-height:16px;color:var(--mu);background:var(--sf);border:1px solid var(--ln);opacity:.85;pointer-events:none}
+#tk{position:absolute;left:12px;bottom:calc(100% + 3px);padding:1px 8px;border-radius:10px;font-size:11px;line-height:16px;color:var(--mu);background:var(--sf);border:1px solid var(--ln);opacity:.85;pointer-events:none}
 #dn{position:absolute;right:14px;top:-46px;width:36px;height:36px;border-radius:50%;background:var(--sf);border:1px solid var(--ln);box-shadow:0 2px 8px rgba(0,0,0,.15)}
 .m.md{white-space:normal}
 .md p{margin:.55em 0}.md>:first-child{margin-top:0}.md>:last-child{margin-bottom:0}
@@ -66,7 +68,7 @@ textarea{display:block;width:100%;border:0;outline:0;resize:none;background:none
 .pa.f{width:auto;max-width:150px;height:40px;padding:0 24px 0 10px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;display:block;line-height:38px}
 .pa .x{position:absolute;top:2px;right:2px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;font-size:14px;line-height:20px;text-align:center}
 .pa.b::after{content:'识别中';position:absolute;inset:0;background:rgba(0,0,0,.5);color:#fff;display:grid;place-items:center;font-size:11px}
-.atl{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;margin-bottom:4px}
+.atl{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-start;margin-bottom:4px}
 .atl .pa{width:76px;height:76px}.atl .pa.f{width:auto;height:40px}
 #viewer{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.82);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:14px;overflow-y:auto}
 #viewer img{max-width:100%;max-height:52vh;object-fit:contain;border-radius:8px}
@@ -80,9 +82,7 @@ textarea{display:block;width:100%;border:0;outline:0;resize:none;background:none
 .ml button:hover{background:var(--ln)}
 #toast{position:fixed;left:50%;bottom:110px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:20px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;max-width:88%;text-align:center}
 #toast.on{opacity:1}
-.r{display:flex;flex-direction:column;max-width:86%}
-.r.user{align-self:flex-end;align-items:flex-end}
-.r.assistant{align-self:flex-start;align-items:flex-start}
+.r{display:flex;flex-direction:column;width:100%;align-items:stretch}
 .r .m{max-width:100%}
 .r.editing{width:100%;max-width:100%;align-items:stretch}
 .r .ed{border:1px solid var(--ln);border-radius:12px;background:var(--sf);padding:9px 12px;max-height:50vh;overflow-y:auto}
@@ -101,7 +101,7 @@ footer{position:relative;z-index:4}
 .pn{padding:10px 12px;color:var(--mu);font-size:14px;display:flex;gap:8px}
 .pn input{flex:1;min-width:0;padding:8px 10px;border:1px solid var(--ln);border-radius:10px;background:var(--bg);color:var(--ink);font:inherit}
 .selw{display:flex;align-items:center;min-width:0}
-#selLabel{font-size:13px;color:var(--mu);max-width:42vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#selLabel{padding:6px 4px;text-align:left;font-size:13px;color:var(--mu);max-width:42vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .screen{position:fixed;inset:0;z-index:6;background:var(--bg);overflow-y:auto}
 .screen .in{max-width:820px;margin:0 auto}
 .bar{display:flex;align-items:center;gap:4px;height:52px;padding:0 6px;border-bottom:1px solid var(--ln)}
@@ -197,7 +197,7 @@ footer{position:relative;z-index:4}
       <div class="pend" id="pend" hidden></div>
       <textarea id="input" rows="1" placeholder="输入消息"></textarea>
       <div class="tools">
-        <div class="tl"><div class="selw"><button class="ic" id="apiBtn" aria-label="选择 API 和模型"><svg viewBox="0 0 24 24"><path d="M9 3v5M15 3v5M6 8h12v3a6 6 0 0 1-12 0zM12 17v4"/></svg></button><span id="selLabel"></span></div></div>
+        <div class="tl"><div class="selw"><button class="ic" id="apiBtn" aria-label="选择 API 和模型"><svg viewBox="0 0 24 24"><path d="M9 3v5M15 3v5M6 8h12v3a6 6 0 0 1-12 0zM12 17v4"/></svg></button><button id="selLabel" aria-label="选择模型"></button></div></div>
         <div style="display:flex;align-items:center">
           <button class="ic" id="attBtn" aria-label="添加附件"><svg viewBox="0 0 24 24"><path d="M20 11.5 12 19.5a5 5 0 0 1-7-7L13.5 4a3.4 3.4 0 0 1 5 5L10 17.5a1.8 1.8 0 0 1-2.5-2.5L15 7.5"/></svg></button>
           <button class="ic" id="send" aria-label="发送"><svg viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></svg></button>
@@ -225,6 +225,8 @@ footer{position:relative;z-index:4}
       <button class="wide" id="apiAdd">添加 API</button>
       <label class="sw"><input type="checkbox" id="stream"> 流式输出</label>
       <label class="fld">回复长度上限（Anthropic 格式用，默认 4096）<input id="maxTok" type="number" inputmode="numeric" min="1"></label>
+      <label class="fld">消息字号：<span id="fszV"></span>px（只改消息和输入框，不影响菜单）<input id="fsz" type="range" min="13" max="24" step="1"></label>
+      <div class="fp">字号预览：这是一段示例文字 The quick brown fox.</div>
     </div>
     <div id="apiForm" hidden>
       <label class="fld">名称<input id="fName" placeholder="例如：我的 Claude"></label>
@@ -345,13 +347,13 @@ async function syncFromFile(){
 async function authorize(){
   if(!handle)return;
   try{granted=(await handle.requestPermission({mode:'readwrite'}))==='granted'}catch(e){granted=false}
-  if(granted)await syncFromFile();else toast('未获得授权');
+  if(granted){$('#sheet').hidden=true;await syncFromFile()}else toast('未获得授权');
   setStatus();
 }
 async function newFile(){
   try{
     handle=await showSaveFilePicker({suggestedName:'chat-data.json',...PICK});
-    granted=true;await kvSet('handle',handle);await writeFile();toast('已创建存档文件');
+    granted=true;await kvSet('handle',handle);await writeFile();toast('已创建存档文件');$('#sheet').hidden=true;
   }catch(e){if(e.name!=='AbortError')toast('创建失败：'+e.message)}
   setStatus();
 }
@@ -398,7 +400,7 @@ let editing=null;
 function ib(label,path,fn){const b=document.createElement('button');b.className='ic';b.title=label;b.setAttribute('aria-label',label);b.innerHTML='<svg viewBox="0 0 24 24"><path d="'+path+'"/></svg>';b.onclick=fn;return b}
 function tb(label,fn,main){const b=document.createElement('button');b.className='tb'+(main?' main':'');b.textContent=label;b.onclick=fn;return b}
 function render(keep){
-  updTok();
+  loadDraft();updTok();
   const s=cur(),l=$('#list'),y=l.scrollTop;
   $('#title').textContent=s.title;document.title=s.title;
   l.textContent='';
@@ -422,7 +424,7 @@ function render(keep){
     if(!(m.role==='user'&&!m.content&&m.atts&&m.atts.length))r.append(d);
     if(!ctrl&&txt(m)){
       const a=document.createElement('div');a.className='acts';
-      if(m.role==='assistant')a.append(ib('重新生成','M20 11a8 8 0 1 0-2.3 5.7M20 5v6h-6',()=>regen(m)));
+      a.append(ib('重新生成','M20 11a8 8 0 1 0-2.3 5.7M20 5v6h-6',()=>m.role==='assistant'?regen(m):regenUser(m)));
       a.append(ib('复制','M9 9h10v11H9zM5 15V4h10',()=>copyMsg(m)));
       a.append(ib('编辑','M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4',()=>{editing=m.id;render(true)}));
       a.append(ib('删除','M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13M10 11v6M14 11v6',()=>delMsg(m)));
@@ -596,12 +598,23 @@ async function regen(m){
   await run(sel.api,sel.model,s,s.messages.splice(i));
 }
 
+async function regenUser(m){
+  if(ctrl)return;
+  const s=cur(),i=s.messages.indexOf(m);if(i<0)return;
+  const sel=pickSel();if(!sel)return;
+  if(i<s.messages.length-1&&!confirm('重新生成会删除这条之后的所有消息，继续吗？'))return;
+  await run(sel.api,sel.model,s,s.messages.splice(i+1));
+}
+
 /* ===== API、发送、流式 ===== */
 const LS=(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k));return v==null?d:v}catch(e){return d}};
 const LSset=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
 const apis=()=>LS('cf_apis',[]);
 const getStream=()=>LS('cf_stream',true);
 const getMax=()=>{const n=parseInt(LS('cf_maxtok',4096),10);return n>0?n:4096};
+const getFs=()=>{const n=parseInt(LS('cf_fs',16),10);return n>=12&&n<=28?n:16};
+const applyFs=n=>document.documentElement.style.setProperty('--fs',n+'px');
+applyFs(getFs());
 const NETERR='网络请求失败：地址有误，或该接口不允许浏览器直连';
 const SEND_ICON='<svg viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></svg>';
 const STOP_ICON='<svg viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2" style="fill:currentColor"/></svg>';
@@ -704,7 +717,7 @@ async function send(){
   if(visCfg(cur())&&pend.some(a=>a.type==='img'&&!(a.desc||'').trim())){toast('有图片还没有文字描述，点开图片可重新识别或手动填写');return}
   const s=cur();if(!s.messages.length&&s.title==='新对话')s.title=(t||(pend[0]&&pend[0].name)||'附件').replace(/\s+/g,' ').slice(0,16);s.messages.push({id:uid(),role:'user',content:t,ts:Date.now(),atts:pend.length?pend.slice():undefined});
   pend=[];renderPend();
-  i.value='';fit();
+  i.value='';fit();saveDraft();
   await run(sel.api,sel.model,s);
 }
 
@@ -727,7 +740,8 @@ async function pickModels(a){
   let ms=[],err='';
   try{ms=await fetchModels(a)}catch(e){err=e.message}
   st.remove();
-  ms.forEach(m=>p.append(item(m,()=>choose(a,m))));
+  const cs=LS('cf_sel',{});
+  ms.forEach(m=>p.append(item(m,()=>choose(a,m),cs.apiId===a.id&&cs.model===m?'✓':'')));
   if(!ms.length){
     const n=document.createElement('div');n.className='pn';n.textContent=err||'没有获取到模型，可以手动输入模型名';p.append(n);
     const w=document.createElement('div');w.className='pn';
@@ -736,11 +750,16 @@ async function pickModels(a){
     w.append(inp,ok);p.append(w);
   }
 }
+$('#selLabel').onclick=()=>{
+  const s=LS('cf_sel',{}),a=apis().find(x=>x.id===s.apiId);
+  if(!a){openPick();return}
+  $('#pick').hidden=$('#pickBg').hidden=false;pickModels(a);
+};
 $('#apiBtn').onclick=openPick;$('#pickBg').onclick=closePick;
 
 /* 总设置 → API */
 let editId=null;
-function openSet(){$('#stream').checked=getStream();$('#maxTok').value=getMax();showMain();$('#set').hidden=false}
+function openSet(){$('#stream').checked=getStream();$('#maxTok').value=getMax();$('#fsz').value=getFs();$('#fszV').textContent=getFs();showMain();$('#set').hidden=false}
 function showMain(){
   $('#setMain').hidden=false;$('#apiForm').hidden=true;$('#setTitle').textContent='总设置';
   const l=$('#apiList');l.textContent='';const L=apis();
@@ -758,6 +777,7 @@ $('#apiAdd').onclick=()=>editApi(null);
 $('#fFmt').onchange=fmtHint;
 $('#stream').onchange=e=>LSset('cf_stream',e.target.checked);
 $('#maxTok').onchange=e=>{const n=parseInt(e.target.value,10);LSset('cf_maxtok',n>0?n:4096);e.target.value=getMax()};
+$('#fsz').oninput=e=>{const n=+e.target.value;LSset('cf_fs',n);applyFs(n);$('#fszV').textContent=n;fit()};
 $('#setBack').onclick=()=>$('#apiForm').hidden?($('#set').hidden=true):showMain();
 $('#bSave').onclick=()=>{
   const L=apis(),u=$('#fUrl').value.trim(),k=$('#fKey').value.trim();
@@ -1121,10 +1141,22 @@ function deleteChat(c){
 $('#menuBtn').onclick=openSide;$('#sideBg').onclick=closeSide;$('#newBtn').onclick=newChat;
 $('#sSet').onclick=()=>{closeSide();openSet()};
 $('#sWin').onclick=()=>{closeSide();openWin()};
+let draftSid=null;
+const dKey=id=>'cf_draft_'+id;
+function saveDraft(){
+  if(!draftSid)return;
+  try{const v=$('#input').value;if(v)localStorage.setItem(dKey(draftSid),v);else localStorage.removeItem(dKey(draftSid))}catch(e){}
+}
+function loadDraft(){
+  const id=cur().id;if(id===draftSid)return;
+  saveDraft();draftSid=id;
+  let v='';try{v=localStorage.getItem(dKey(id))||''}catch(e){}
+  $('#input').value=v;fit();
+}
 function fit(){const i=$('#input');i.style.height='auto';i.style.height=Math.min(i.scrollHeight,120,innerHeight*.3)+'px';updTok()}
 
 $('#send').onclick=send;
-$('#input').oninput=fit;
+$('#input').oninput=()=>{fit();saveDraft()};
 $('#saveBtn').onclick=()=>$('#sheet').hidden=false;
 $('#sheet').onclick=e=>{if(e.target.id==='sheet')e.target.hidden=true};
 $('#noticeBtn').onclick=e=>e.target.dataset.act==='auth'?authorize():($('#sheet').hidden=false);
@@ -1142,12 +1174,21 @@ $('#fsBtn').onclick=()=>{
   e.requestFullscreen().catch(()=>toast('全屏被浏览器拦截了'));
 };
 document.addEventListener('fullscreenchange',()=>{$('#fsBtn').innerHTML=document.fullscreenElement?FS_OUT:FS_IN});
+if(window.visualViewport){
+  const vv=visualViewport,app=$('#app');
+  const fixVV=()=>{
+    if(vv.scale<=1.01&&innerHeight-vv.height>1){app.style.height=vv.height+'px';app.style.transform='translateY('+vv.offsetTop+'px)'}
+    else{app.style.height='';app.style.transform=''}
+  };
+  vv.addEventListener('resize',fixVV);vv.addEventListener('scroll',fixVV);
+}
 document.addEventListener('visibilitychange',()=>{if(document.hidden)writeFile()});
 
 /* 启动 */
 (async()=>{
   try{state=await kvGet('state');handle=(await kvGet('handle'))||null}catch(e){}
   if(!valid(state))state=fresh();
+  try{const ids=new Set(state.sessions.map(x=>x.id));Object.keys(localStorage).filter(k=>k.startsWith('cf_draft_')&&!ids.has(k.slice(9))).forEach(k=>localStorage.removeItem(k))}catch(e){}
   await checkPerm();
   render();setStatus();
   if(handle&&granted)await syncFromFile();
